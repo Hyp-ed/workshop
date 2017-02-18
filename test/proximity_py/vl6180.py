@@ -1,33 +1,43 @@
-import ustruct
+import smbus
+import struct
 import time
 
 
 class Sensor:
-    def __init__(self, i2c, address=0x29):
-        self.i2c = i2c
+    def __init__(self, bus=smbus.SMBus(1), address=0x29):
+        self._bus = bus
         self._address = address
         self.init()
         self.default_settings()
 
     def _set_reg8(self, address, value):
-        data = ustruct.pack('>HB', address, value)
-        self.i2c.writeto(self._address, data)
+        #data = struct.pack('>HB', address, value)
+        #self.i2c.writeto(self._address, data)
+        self._bus.write_byte_data(self._address, address, value)
 
     def _set_reg16(self, address, value):
-        data = ustruct.pack('>HH', address, value)
-        self.i2c.writeto(self._address, data)
+        #data = ustruct.pack('>HH', address, value)
+        #self.i2c.writeto(self._address, data)
+        high = (value & 0xff00) >> 8
+        low = value & 0x00ff
+        self._bus.write_byte_data(self._address, address, high)
+        self._bus.write_byte_data(self._address, address + 1, low)
 
     def _get_reg8(self, address):
-        self.i2c.start()
-        self.i2c.write(ustruct.pack('>BH', self._address << 1, address))
-        data = self.i2c.readfrom(self._address, 1)
-        return data[0]
+        #self.i2c.start()
+        #self.i2c.write(ustruct.pack('>BH', self._address << 1, address))
+        #data = self.i2c.readfrom(self._address, 1)
+        #return data[0]
+        return self._bus.read_byte_data(self._address, address)
 
     def _get_reg16(self, address):
-        self.i2c.start()
-        self.i2c.write(ustruct.pack('>BH', self._address << 1, address))
-        data = self.i2c.readfrom(self._address, 2)
-        return ustruct.unpack('>B', data)[0]
+        #self.i2c.start()
+        #self.i2c.write(ustruct.pack('>BH', self._address << 1, address))
+        #data = self.i2c.readfrom(self._address, 2)
+        #return ustruct.unpack('>B', data)[0]
+        high = self._bus.read_byte_data(self._address, address)
+        low = self._bus.read_byte_data(self._address, address + 1)
+        return (high << 8) + low
 
     def init(self):
         if self._get_reg8(0x0016) != 1:
