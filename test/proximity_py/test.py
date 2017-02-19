@@ -1,7 +1,7 @@
-from vl6180 import Sensor
+#!/usr/bin/python
 
-s = Sensor()
-#s._set_reg8(0x016, 0x01)
-#print s._get_reg8(0x016)
-print s.identify()
-print s.range()
+import vl6180
+
+vl6180.initialize()
+dist = vl6180.get_distance()
+print dist
