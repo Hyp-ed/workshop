@@ -25,14 +25,12 @@ def close():
     fr.close()
 
 def read_reg8(reg):
-    #return bus.read_byte_data(address, adr)
     write(bytearray([(reg >> 8) & 0xFF, reg & 0xFF]))
     v = read(1)
     #print type(v), ord(v), hex(ord(v)), v
     return ord(v)
 
 def write_reg8(reg, data):
-    #bus.write_byte_data(address, adr, data)
     write(bytearray([(reg >> 8) & 0xFF, reg & 0xFF, data & 0xFF]))
 
 def start_range():
@@ -45,7 +43,6 @@ def poll_range():
 
     # wait for new measurement ready status
     while range_status != 0x04:
-        #print status
         status = read_reg8(0x04f)
         range_status = status & 0x07
 
