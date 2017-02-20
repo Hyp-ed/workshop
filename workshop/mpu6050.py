@@ -1,59 +1,48 @@
 #!/usr/bin/python
-
 from i2c import I2C
 
-GYRO_SCALE = 131.0
-ACCL_SCALE = 16384.0
-
+DEFAULT_ADDRESS = 0x68
 # Power management registers
 power_mgmt_1 = 0x6b
 power_mgmt_2 = 0x6c
 
-i = I2C(1, 0x68, 8)
-
-
-def read_byte(adr):
-    return i.read_reg(adr)
-
-
-def read_word(adr):
-    high = read_byte(adr)
-    low = read_byte(adr+1)
-    val = (high << 8) + low
-    return val
-
-
-def read_word_2c(adr):
-    val = read_word(adr)
+def read_short_signed(i2c, addr):
+    high = i2c.read_reg(addr)
+    low = i2c.read_reg(addr + 1)
+    val = (high << 8) | low # unsigned
     if val >= 0x8000:
-        return -((65535 - val) + 1)
+        return -((0xffff - val) + 1)
     else:
         return val
 
+class Accelerometer:
+    def __init__(self, address = DEFAULT_ADDRESS):
+        self._i2c = I2C(1, address, 8)
+        self._i2c.write_reg(power_mgmt_1, 0)
+        self.SCALE = 16384.0
 
-def read_gyro_data():
-    x = read_word_2c(0x43)
-    y = read_word_2c(0x45)
-    z = read_word_2c(0x47)
-    return (x, y, z)
+    def get_acceleration_raw(self):
+        x = read_short_signed(self._i2c, 0x3b)
+        y = read_short_signed(self._i2c, 0x3d)
+        z = read_short_signed(self._i2c, 0x3f)
+        return (x, y, z)
 
+    def get_acceleration(self):
+        (x, y, z) = self.get_acceleration_raw()
+        return (x / self.SCALE, y / self.SCALE, z / self.SCALE)
 
-def read_accl_data():
-    x = read_word_2c(0x3b)
-    y = read_word_2c(0x3d)
-    z = read_word_2c(0x3f)
-    return (x, y, z)
+class Gyro:
+    def __init__(self, address = DEFAULT_ADDRESS):
+        self._i2c = I2C(1, address, 8)
+        self._i2c.write_reg(power_mgmt_1, 0)
+        self.SCALE = 131.0
 
+    def get_angular_velocity_raw(self):
+        x = read_short_signed(self._i2c, 0x43)
+        y = read_short_signed(self._i2c, 0x45)
+        z = read_short_signed(self._i2c, 0x47)
+        return (x, y, z)
 
-def read_temperature():
-    t = read_word_2c(0x41)
-    return t
-
-#bus = smbus.SMBus(1) # or bus = smbus.SMBus(1) for Revision 2 boards
-#address = 0x68       # This is the address value read via the i2cdetect command
-
-# Now wake the 6050 up as it starts in sleep mode
-#bus.write_byte_data(address, power_mgmt_1, 0)
-i.write_reg(power_mgmt_1, 0)
-
-
+    def get_angular_velocity(self):
+        (x, y, z) = self.get_angular_velocity_raw()
+        return (x / self.SCALE, y / self.SCALE, z / self.SCALE)

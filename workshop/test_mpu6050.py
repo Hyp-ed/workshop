@@ -1,9 +1,6 @@
 #!/usr/bin/python
-
-import smbus
 import math
-
-from mpu6050 import *
+from mpu6050 import Accelerometer, Gyro
 
 def get_rotation(x,y,z):
     angle = math.acos(z/math.sqrt(x*x + y*y + z*z))
@@ -31,10 +28,13 @@ def get_x_rotation(y,z):
     #z = z/scl
     #return 90*sgn(y)-sgn(z)*sgn(y)*(90-abs(math.degrees(math.asin(y))))
 
+accl = Accelerometer()
+gyro = Gyro()
+
 print "gyro data"
 print "---------"
 
-(gyro_xout, gyro_yout, gyro_zout) = read_gyro_data()
+(gyro_xout, gyro_yout, gyro_zout) = gyro.get_angular_velocity_raw()
 
 print "gyro_xout: ", gyro_xout, " scaled: ", (gyro_xout / 131.0)
 print "gyro_yout: ", gyro_yout, " scaled: ", (gyro_yout / 131.0)
@@ -44,7 +44,7 @@ print
 print "accelerometer data"
 print "------------------"
 
-(accel_xout, accel_yout, accel_zout) = read_accl_data()
+(accel_xout, accel_yout, accel_zout) = accl.get_acceleration_raw()
 
 scl = 16384.0
 accel_xout_scaled = accel_xout / scl#/ 16384.0
@@ -58,9 +58,3 @@ print "accel_zout: ", accel_zout, " scaled: ", accel_zout_scaled
 print "x rotation: " , get_x_rotation(accel_yout, accel_zout)
 print "y rotation: " , get_y_rotation(accel_xout, accel_zout)
 print "rotation: ", get_rotation(accel_xout, accel_yout, accel_zout)
-print
-
-print "temperature data"
-print "----------------"
-temp_out = read_temperature()
-print "temp_out:", temp_out, " scaled: ", (temp_out + 521)/340.0
