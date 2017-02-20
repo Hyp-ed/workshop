@@ -1,16 +1,39 @@
 #!/usr/bin/python
 
-
-import smbus
+import io
+import fcntl
+#import smbus
 
 address = 0x29
-bus = smbus.SMBus(1)
+#bus = smbus.SMBus(1)
+IOCTL_I2C_SLAVE = 0x0703
 
-def read_reg8(adr):
-    return bus.read_byte_data(address, adr)
+fr = io.open("/dev/i2c-1", "rb", buffering=0)
+fw = io.open("/dev/i2c-1", "wb", buffering=0)
 
-def write_reg8(adr, data):
-    bus.write_byte_data(address, adr, data)
+fcntl.ioctl(fr, IOCTL_I2C_SLAVE, 0x29)
+fcntl.ioctl(fw, IOCTL_I2C_SLAVE, 0x29)
+
+def write(data):
+    fw.write(data)
+
+def read(num):
+    return fr.read(num)
+
+def close():
+    fw.close()
+    fr.close()
+
+def read_reg8(reg):
+    #return bus.read_byte_data(address, adr)
+    write(bytearray([(reg >> 8) & 0xFF, reg & 0xFF]))
+    v = read(1)
+    #print type(v), ord(v), hex(ord(v)), v
+    return ord(v)
+
+def write_reg8(reg, data):
+    #bus.write_byte_data(address, adr, data)
+    write(bytearray([(reg >> 8) & 0xFF, reg & 0xFF, data & 0xFF]))
 
 def start_range():
     write_reg8(0x018, 0x01)
@@ -22,6 +45,7 @@ def poll_range():
 
     # wait for new measurement ready status
     while range_status != 0x04:
+        #print status
         status = read_reg8(0x04f)
         range_status = status & 0x07
 
@@ -81,3 +105,4 @@ def get_distance():
     poll_range()
     rng = read_reg8(0x062)
     clear_interrupts()
+    return rng
