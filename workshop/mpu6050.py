@@ -86,6 +86,9 @@ class Gyro:
     def get_angular_position(self):
         return self._position_thread.pos
 
+    def update_pos(self, pos):
+        self._position_thread.pos = pos
+
 
 class GyroThread(threading.Thread):
     def __init__(self, gyro):
